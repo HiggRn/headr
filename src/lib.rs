@@ -69,8 +69,8 @@ pub fn get_args() -> RunResult<Config> {
 }
 
 pub fn run(config: Config) -> RunResult<()> {
-let num_files = config.files.len();
 
+    let num_files = config.files.len();
     for (file_num, filename) in config.files.iter().enumerate() {
         let mut file = match open(&filename) {
             Ok(file) => file,
