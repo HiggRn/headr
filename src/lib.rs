@@ -43,11 +43,12 @@ pub fn get_args() -> RunResult<Config> {
     
     let files = matches.get_many::<String>("files")
         .unwrap()
-        .map(|s| s.clone())
+        .map(String::clone)
         .collect();
     
     let lines = matches.get_one::<String>("lines")
-        .map(|s| parse_positive_int(s.as_str()))
+        .map(String::as_str)
+        .map(parse_positive_int)
         .transpose()
         .map_err(|err|
             format!("illegal line count -- {err}")
@@ -55,7 +56,8 @@ pub fn get_args() -> RunResult<Config> {
         .unwrap();
 
     let bytes = matches.get_one::<String>("bytes")
-        .map(|s| parse_positive_int(s.as_str()))
+        .map(String::as_str)
+        .map(parse_positive_int)
         .transpose()
         .map_err(|err|
             format!("illegal byte count -- {err}")
