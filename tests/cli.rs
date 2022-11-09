@@ -15,6 +15,7 @@ const ONE: &str = "./tests/inputs/one.txt";
 const TWO: &str = "./tests/inputs/two.txt";
 const THREE: &str = "./tests/inputs/three.txt";
 const TEN: &str = "./tests/inputs/ten.txt";
+const HUGE: &str = "./tests/inputs/huge.txt";
 
 // --------------------------------------------------
 fn random_string() -> String {
@@ -417,5 +418,21 @@ fn multiple_files_c4() -> TestResult {
     run(
         &["-c", "4", EMPTY, ONE, TWO, THREE, TEN],
         "tests/expected/all.c4.out",
+    )
+}
+
+#[test]
+fn huge_c_m2k() -> TestResult {
+    run(
+        &["--bytes=-2K", HUGE],
+        "tests/expected/huge.txt.c-2K.out"
+    )
+}
+
+#[test]
+fn huge_n_1b() -> TestResult {
+    run(
+        &["--lines=1b", HUGE],
+        "tests/expected/huge.txt.n1b.out"
     )
 }

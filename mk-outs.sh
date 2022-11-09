@@ -7,12 +7,17 @@ OUT_DIR="./tests/expected"
 
 for FILE in $INPUTS/*.txt; do
     BASENAME=$(basename "$FILE")
-    head      $FILE > ${OUT_DIR}/${BASENAME}.out
-    head -n 2 $FILE > ${OUT_DIR}/${BASENAME}.n2.out
-    head -n 4 $FILE > ${OUT_DIR}/${BASENAME}.n4.out
-    head -c 1 $FILE > ${OUT_DIR}/${BASENAME}.c1.out
-    head -c 2 $FILE > ${OUT_DIR}/${BASENAME}.c2.out
-    head -c 4 $FILE > ${OUT_DIR}/${BASENAME}.c4.out
+    if [ "$FILE" = "$INPUTS/huge.txt" ]; then
+        head --bytes=-2K $FILE > ${OUT_DIR}/${BASENAME}.c-2K.out
+        head --lines=1b $FILE > ${OUT_DIR}/${BASENAME}.n1b.out
+    else
+        head      $FILE > ${OUT_DIR}/${BASENAME}.out
+        head -n 2 $FILE > ${OUT_DIR}/${BASENAME}.n2.out
+        head -n 4 $FILE > ${OUT_DIR}/${BASENAME}.n4.out
+        head -c 1 $FILE > ${OUT_DIR}/${BASENAME}.c1.out
+        head -c 2 $FILE > ${OUT_DIR}/${BASENAME}.c2.out
+        head -c 4 $FILE > ${OUT_DIR}/${BASENAME}.c4.out
+    fi
 done
 
 ALL="$INPUTS/empty.txt $INPUTS/one.txt $INPUTS/two.txt $INPUTS/three.txt \
