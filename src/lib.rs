@@ -73,8 +73,8 @@ pub fn get_args() -> RunResult<Config> {
 pub fn run(config: Config) -> RunResult<()> {
     let num_files = config.files.len();
     for (file_num, filename) in config.files.iter().enumerate() {
-        let (mut file, file_size) = match open(&filename) {
-            Ok((file, file_size)) => (file, file_size),
+        let (mut file, size, line_count) = match open(&filename) {
+            Ok((file, size, line_count)) => (file, size, line_count),
             Err(err) => {
                 eprintln!("{filename}: {err}");
                 continue;
@@ -93,13 +93,16 @@ pub fn run(config: Config) -> RunResult<()> {
             let bytes: Result<Vec<u8>, _> =
                 file.bytes().take(
                     if num_bytes < 0 {
-                        file_size as isize + num_bytes
+                        size as isize + num_bytes
                     } else { num_bytes } as usize
                 ).collect();
             print!("{}", String::from_utf8_lossy(&bytes?));
         } else {
             let mut line = String::new();
-            for _ in 0..config.lines {
+            let num_lines = if config.lines < 0 {
+                line_count as isize + config.lines
+            } else { config.lines };
+            for _ in 0..num_lines {
                 let bytes = file.read_line(&mut line)?;
                 if bytes == 0 {
                     break;
@@ -112,18 +115,21 @@ pub fn run(config: Config) -> RunResult<()> {
     Ok(())
 }
 
-fn open(filename: &str) -> RunResult<(Box<dyn BufRead>, usize)> {
+fn open(filename: &str) -> RunResult<(Box<dyn BufRead>, usize, usize)> {
     match filename {
         "-" => Ok((
             Box::new(BufReader::new(io::stdin())),
-            0
+            0,
+            1
         )),        
         _ => {
+            let line_count = BufReader::new(File::open(filename)?).lines().count();
             let file = File::open(filename)?;
             let size = file.metadata()?.len();
             Ok((
                 Box::new(BufReader::new(file)),
-                size as usize
+                size as usize,
+                line_count
             ))
         }
     }
