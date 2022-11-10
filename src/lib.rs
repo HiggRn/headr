@@ -1,4 +1,4 @@
-use clap::{Arg, Command};
+use clap::{arg, command};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, Read};
@@ -6,39 +6,23 @@ use std::io::{self, BufRead, BufReader, Read};
 #[derive(Debug)]
 pub struct Config {
     files: Vec<String>,
-    lines: isize,
-    bytes: Option<isize>
+    lines: i128,
+    bytes: Option<i128>
 }
 
 type RunResult<T> = Result<T, Box<dyn Error>>;
 
 pub fn get_args() -> RunResult<Config> {
-    let matches = Command::new("headr")
-        .version("0.1.0")
-        .about("head in Rust")
-        .arg(
-            Arg::new("files")
-            .value_name("FILE")
-            .help("Input file(s)")
-            .num_args(0..)
-            .default_value("-")
-        )
-        .arg(
-            Arg::new("bytes")
-                .short('c')
-                .long("bytes")
-                .value_name("BYTES")
-                .conflicts_with("lines")
-                .help("Number of bytes")
-        )
-        .arg(
-            Arg::new("lines")
-                .short('n')
-                .long("lines")
-                .value_name("LINES")
+    let matches = command!()
+        .args(&[
+            arg!(files: [FILE] "Input file(s)")
+                .num_args(0..)
+                .default_value("-"),
+            arg!(bytes: -c --bytes <BYTES> "Number of bytes")
+                .conflicts_with("lines"),
+            arg!(lines: -n --lines <LINES> "Number of lines")
                 .default_value("10")
-                .help("Number of lines")
-        )
+        ])
         .get_matches();
     
     let files = matches.get_many::<String>("files")
@@ -93,14 +77,14 @@ pub fn run(config: Config) -> RunResult<()> {
             let bytes: Result<Vec<u8>, _> =
                 file.bytes().take(
                     if num_bytes < 0 {
-                        size as isize + num_bytes
+                        size as i128 + num_bytes
                     } else { num_bytes } as usize
                 ).collect();
             print!("{}", String::from_utf8_lossy(&bytes?));
         } else {
             let mut line = String::new();
             let num_lines = if config.lines < 0 {
-                line_count as isize + config.lines
+                line_count as i128 + config.lines
             } else { config.lines };
             for _ in 0..num_lines {
                 let bytes = file.read_line(&mut line)?;
@@ -135,9 +119,9 @@ fn open(filename: &str) -> RunResult<(Box<dyn BufRead>, usize, usize)> {
     }
 }
 
-fn parse(val: &str) -> RunResult<isize> {
-    let map = "KMGTPEZ";
-    let scale: isize;
+fn parse(val: &str) -> RunResult<i128> {
+    const MAP: &str = "KMGTPEZY";
+    let scale: i128;
     let mut len = val.len();
 
     match val.chars().last().unwrap() {
@@ -149,19 +133,19 @@ fn parse(val: &str) -> RunResult<isize> {
             len -= 2;
             match val[0..=len].chars().last().unwrap() {
                 'k' => scale = 1000,
-                c => if let Some(n) = map.find(c) {
-                    scale = 10_isize.pow(n as u32);
+                c => if let Some(n) = MAP.find(c) {
+                    scale = 10_i128.pow(n as u32);
                 } else { return Err(val.into()) }
             }
         }
 
-        c => if let Some(n) = map.find(c) {
+        c => if let Some(n) = MAP.find(c) {
             scale = 1 << (10 * (n + 1));
             len -= 1;
         } else { scale = 1; }
     }
 
-    match val[0..len].parse::<isize>() {
+    match val[0..len].parse::<i128>() {
         Ok(n) => Ok(scale * n),
         _ => Err(val.into())
     }    
