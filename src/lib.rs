@@ -4,10 +4,18 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader, Read};
 
 #[derive(Debug)]
+enum HeaderChoice {
+    Always,
+    Never,
+    Multiple
+}
+
+#[derive(Debug)]
 pub struct Config {
     files: Vec<String>,
     lines: i128,
-    bytes: Option<i128>
+    bytes: Option<i128>,
+    print_header: HeaderChoice
 }
 
 type RunResult<T> = Result<T, Box<dyn Error>>;
@@ -21,7 +29,12 @@ pub fn get_args() -> RunResult<Config> {
             arg!(bytes: -c --bytes <BYTES> "Number of bytes")
                 .conflicts_with("lines"),
             arg!(lines: -n --lines <LINES> "Number of lines")
-                .default_value("10")
+                .default_value("10"),
+            arg!(quiet: -q --quiet "never print headers giving file names")
+                .alias("silent")
+                .conflicts_with("verbose"),
+            arg!(verbose: -v --verbose "always print headers giving file names")
+                .conflicts_with("quiet")
         ])
         .get_matches();
     
@@ -50,7 +63,14 @@ pub fn get_args() -> RunResult<Config> {
     Ok(Config {
         files,
         lines,
-        bytes
+        bytes,
+        print_header: if matches.get_flag("quiet") {
+            HeaderChoice::Never
+        } else if matches.get_flag("verbose") {
+            HeaderChoice::Always
+        } else {
+            HeaderChoice::Multiple
+        }
     })
 }
 
@@ -65,7 +85,13 @@ pub fn run(config: Config) -> RunResult<()> {
             }
         };
 
-        if num_files > 1 {
+        let print_header = match config.print_header {
+            HeaderChoice::Always => true,
+            HeaderChoice::Never => false,
+            HeaderChoice::Multiple => num_files > 1
+        };
+
+        if print_header {
             println!(
                 "{}==> {} <==",
                 if file_num > 0 { "\n" } else { "" },
