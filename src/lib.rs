@@ -116,22 +116,22 @@ pub fn run(config: Config) -> RunResult<()> {
 }
 
 fn open(filename: &str) -> RunResult<(Box<dyn BufRead>, usize, usize)> {
-    match filename {
-        "-" => Ok((
-            Box::new(BufReader::new(io::stdin())),
-            0,
-            1
-        )),        
-        _ => {
-            let line_count = BufReader::new(File::open(filename)?).lines().count();
-            let file = File::open(filename)?;
-            let size = file.metadata()?.len();
-            Ok((
-                Box::new(BufReader::new(file)),
-                size as usize,
-                line_count
-            ))
-        }
+    if let "-" = filename {
+        Ok((
+        Box::new(BufReader::new(io::stdin())),
+        0,
+        1
+    ))
+    } else {
+        let line_count = BufReader::new(File::open(filename)?).lines().count();
+        let file = File::open(filename)?;
+        let size = file.metadata()?.len();
+        
+        Ok((
+            Box::new(BufReader::new(file)),
+            size as usize,
+            line_count
+        ))
     }
 }
 
